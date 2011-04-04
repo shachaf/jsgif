@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+bk = ''
+
+bk << 'javascript:'
+
+ARGF.each_line {|l|
+  bk << l.chomp.sub(/^ */, '').sub(/\/\/.*/, '')
+}
+
+bk << ';bookmarklet();void(0)'
+
+print bk
