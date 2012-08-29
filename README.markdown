@@ -12,6 +12,7 @@ Please see example.html for, you know, and example. This will demonstrate how to
 
 Please note: this example must be loaded via a webserver, not directly from disk. I.e. http://localhost/libgif-js/example.html NOT file:///libgif-js/example.html. See the same-domain origin caveat at the bottom of this document for more information.
 
+For a hosted example, check out this post on BuzzFeed.com (http://www.buzzfeed.com/yacomink/rubbable-gifs)
 
 # Technical Details
 
