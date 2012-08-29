@@ -6,9 +6,14 @@ This is an attempt to pull out the gif parsing and playing logic, seperate it fr
 
 As an added bonus, you can make gifs "rubbable" so that scrubbing with your mouse (or rubbing with your finger on a touch device) cause the gif to move back and forth.
 
-Please see example.html for, you know, and example.
+# Example
 
-# Details
+Please see example.html for, you know, and example. This will demonstrate how to use basic play controls for a gif, and also a rubbable one.
+
+Please note: this example must be loaded via a webserver, not directly from disk. I.e. http://localhost/libgif-js/example.html NOT file:///libgif-js/example.html. See the same-domain origin caveat at the bottom of this document for more information.
+
+
+# Technical Details
 
 Of note to the developer, libjs.gif contains a class SuperGif, which can be used to manipulate animated gifs.
 
