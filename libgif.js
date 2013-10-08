@@ -21,14 +21,11 @@
 
 		rel:auto_play -		Defaults to 1 if not specified. If set to zero, a call to the play() method is needed
 
-		rel:rubbable -		Defaults to 0 if not specified. If set to 1, the gif will be a canvas with handlers to handle rubbing.
-
-	Constructor options
+	Constructor options args
 
 		gif 				Required. The DOM element of an img tag.
 		auto_play 			Optional. Same as the rel:auto_play attribute above, this arg overrides the img tag info.
 		max_width			Optional. Scale images over max_width down to max_width. Helpful with mobile.
-		rubbable			Optional. Make it rubbable.
 
 	Instance methods
 
@@ -48,6 +45,15 @@
 		get_auto_play		Whether or not the gif is set to play automatically
 		get_length			The number of frames in the gif
 		get_current_frame	The index of the currently displayed frame of the gif
+
+		For additional customization (viewport inside iframe) these params may be passed:
+		c_w, c_h - width and height of canvas
+		vp_t, vp_l, vp_ w, vp_h - top, left, width and height of the viewport
+
+		A bonus: few articles to understand what is going on
+			http://enthusiasms.org/post/16976438906
+			http://www.matthewflickinger.com/lab/whatsinagif/bits_and_bytes.asp
+			http://humpy77.deviantart.com/journal/Frame-Delay-Times-for-Animated-GIFs-214150546
 
 */
 
@@ -397,7 +403,19 @@ var parseGIF = function (st, handler) {
 };
 
 
-var SuperGif = function ( options ) {
+var SuperGif = function ( opts ) {
+	var options = {
+		//viewport position
+		vp_l: 0,
+		vp_t: 0,
+		vp_w: null,
+		vp_h: null,
+		//canvas sizes
+		c_w: null,
+		c_h: null
+	};
+	for (var i in opts ) { options[i] = opts[i] }
+	if (options.vp_w && options.vp_h) options.is_vp = true;
 
 	var stream;
 	var hdr;
@@ -413,6 +431,7 @@ var SuperGif = function ( options ) {
 
 	var playing = true;
 	var forward = true;
+
 	var ctx_scaled = false;
 
 	var frames = [];
@@ -420,9 +439,6 @@ var SuperGif = function ( options ) {
 	var gif = options.gif;
 	if (typeof options.auto_play == 'undefined') 
 		options.auto_play = (!gif.getAttribute('rel:auto_play') || gif.getAttribute('rel:auto_play') == '1');
-
-	if (typeof options.rubbable == 'undefined') 
-		options.rubbable = (!gif.getAttribute('rel:rubbable') || gif.getAttribute('rel:rubbable') == '1');
 
 	var clear = function () {
 		transparency = null;
@@ -448,33 +464,75 @@ var SuperGif = function ( options ) {
 		toolbar.style.visibility = 'visible';
 	};
 
+	var setSizes = function(w, h) {
+		canvas.width = w * get_canvas_scale();
+		canvas.height = h * get_canvas_scale();
+		toolbar.style.minWidth = ( w * get_canvas_scale() ) + 'px';
+
+		tmpCanvas.width = w;
+		tmpCanvas.height = h;
+		tmpCanvas.style.width = w + 'px';
+		tmpCanvas.style.height = h + 'px';
+		tmpCanvas.getContext('2d').setTransform(1, 0, 0, 1, 0, 0);
+	}
+
 	var doShowProgress = function (pos, length, draw) {
 		if (draw) {
 			var height = 25;
-			var top = (canvas.height - height);
-			var mid = (pos / length) * canvas.width;
-
+			var left, mid, top, width;
+			if (options.is_vp) {
+				if (!ctx_scaled) {
+					top = (options.vp_t + options.vp_h - height);
+					height = height;
+					left = options.vp_l;
+					mid = left + (pos / length) * options.vp_w;
+					width = canvas.width;
+				} else {
+					top = (options.vp_t + options.vp_h - height) / get_canvas_scale();
+					height = height / get_canvas_scale();
+					left = (options.vp_l / get_canvas_scale() );
+					mid = left + (pos / length) * (options.vp_w / get_canvas_scale());
+					width = canvas.width / get_canvas_scale();
+				}
+				//some debugging, draw rect around viewport
+				if (false) {
+					if (!ctx_scaled) {
+						var l = options.vp_l, t = options.vp_t;
+						var w = options.vp_w, h = options.vp_h;
+					} else {
+						var l = options.vp_l/get_canvas_scale(), t = options.vp_t/get_canvas_scale();
+						var w = options.vp_w/get_canvas_scale(), h = options.vp_h/get_canvas_scale();
+					}
+					ctx.rect(l,t,w,h);
+					ctx.stroke();
+				}
+			}
+			else {
+				top = canvas.height - height;
+				mid = (pos / length) * canvas.width;
+				width = canvas.width;
+			}
 			// XXX Figure out alpha fillRect.
 			//ctx.fillStyle = 'salmon';
 			ctx.fillStyle = 'rgba(255,255,255,0.4)';
-			ctx.fillRect(mid, top, canvas.width - mid, height);
+			ctx.fillRect(mid, top, width - mid, height);
 
 			//ctx.fillStyle = 'teal';
 			ctx.fillStyle = 'rgba(255,0,22,.8)';
-			ctx.fillRect(0, top, (pos / length) * canvas.width, height);
+			ctx.fillRect(0, top, mid, height);
 		}
 	};
 
 	var doLoadError = function (originOfError) {
 		var drawError = function () {
 			ctx.fillStyle = 'black';
-			ctx.fillRect(0, 0, hdr.width, hdr.height);
+			ctx.fillRect(0, 0, options.c_w ? options.c_w : hdr.width, options.c_h ? options.c_h : hdr.height);
 			ctx.strokeStyle = 'red';
 			ctx.lineWidth = 3;
 			ctx.moveTo(0, 0);
-			ctx.lineTo(hdr.width, hdr.height);
-			ctx.moveTo(0, hdr.height);
-			ctx.lineTo(hdr.width, 0);
+			ctx.lineTo(options.c_w ? options.c_w : hdr.width, options.c_h ? options.c_h : hdr.height);
+			ctx.moveTo(0, options.c_h ? options.c_h : hdr.height);
+			ctx.lineTo(options.c_w ? options.c_w : hdr.width, 0);
 			ctx.stroke();
 		};
 
@@ -489,12 +547,7 @@ var SuperGif = function ( options ) {
 
 	var doHdr = function (_hdr) {
 		hdr = _hdr;
-		canvas.width = hdr.width;
-		canvas.height = hdr.height;
-		toolbar.style.minWidth = hdr.width + 'px';
-
-		tmpCanvas.width = hdr.width;
-		tmpCanvas.height = hdr.height;
+		setSizes(hdr.width, hdr.height)
 	};
 
 	var doGCE = function (gce) {
@@ -514,14 +567,16 @@ var SuperGif = function ( options ) {
 		});
 	};
 
-	var firstImg = false;;
-	var firstCData = false;;
+	var firstImg = false;
+	var firstCData = false;
 
 	var doImg = function (img) {
 		if (!frame) frame = tmpCanvas.getContext('2d');
+		//ct = color table, gct = global color table
 		var ct = img.lctFlag ? img.lct : hdr.gct; // TODO: What if neither exists?
 		var cData = frame.getImageData(img.leftPos, img.topPos, img.width, img.height);
 
+		//apply color table colors
 		img.pixels.forEach(function (pixel, i) {
 			// cData.data === [R,G,B,A,...]
 			if (transparency !== pixel) { // This includes null, if no transparency was defined.
@@ -552,8 +607,7 @@ var SuperGif = function ( options ) {
 
 		frame.putImageData(cData, img.leftPos, img.topPos);
 
-		if (!ctx_scaled)
-		{
+		if (!ctx_scaled) {
 			ctx.scale(get_canvas_scale(),get_canvas_scale());
 			ctx_scaled = true;
 		}
@@ -620,7 +674,9 @@ var SuperGif = function ( options ) {
 			init: function () {
 				if (loadError) return;
 
-				ctx.scale(get_canvas_scale(),get_canvas_scale());
+				if ( ! (options.c_w && options.c_h) ) {
+					ctx.scale(get_canvas_scale(),get_canvas_scale());
+				}
 
 				if (options.auto_play) {
 					step();
@@ -662,67 +718,6 @@ var SuperGif = function ( options ) {
 		};
 	};
 
-	var register_canvas_handers = function () {
-
-			var maxTime = 1000,
-				// allow movement if < 1000 ms (1 sec)
-				maxDistance = Math.floor(canvas.width / (player.length() * 2)),
-				// swipe movement of 50 pixels triggers the swipe
-				startX = 0,
-				startTime = 0;
-
-			var cantouch = "ontouchend" in document;
-
-			var aj = 0;
-			var last_played = 0;
-
-			var startup = function (e) {
-				// prevent image drag (Firefox)
-				e.preventDefault();
-				if (options.auto_play) player.pause();
-
-				var pos = (e.touches && e.touches.length > 0) ? e.touches[0] : e;
-
-				var x = (pos.layerX > 0) ? pos.layerX : canvas.width / 2;
-				var progress = x / canvas.width;
-
-				player.move_to( Math.floor(progress * (player.length() - 1)) );
-				
-				startTime = e.timeStamp;
-				startX = pos.pageX;
-			};
-			canvas.addEventListener((cantouch) ? 'touchstart' : 'mousedown', startup );
-
-			var shutdown = function (e) {
-				startTime = 0;
-				startX = 0;
-				if (options.auto_play) player.play();
-			};
-			canvas.addEventListener((cantouch) ? 'touchend' : 'mouseup', shutdown);
-
-			var moveprogress = function (e) {
-				e.preventDefault();
-				var pos = (e.touches && e.touches.length > 0) ? e.touches[0] : e;
-
-				var currentX = pos.pageX;
-				currentDistance = (startX === 0) ? 0 : Math.abs(currentX - startX);
-				// allow if movement < 1 sec
-				currentTime = e.timeStamp;
-				if (startTime !== 0 && currentDistance > maxDistance) {
-					if (currentX < startX && player.current_frame() > 0) {
-						player.move_relative(-1);
-					}
-					if (currentX > startX && player.current_frame() < player.length() - 1) {
-						player.move_relative(1);
-					}
-					startTime = e.timeStamp;
-					startX = pos.pageX;
-				}
-
-			};
-			canvas.addEventListener((cantouch) ? 'touchmove' : 'mousemove', moveprogress);
-		};
-
 
 	var handler = {
 		hdr: withProgress(doHdr),
@@ -738,13 +733,13 @@ var SuperGif = function ( options ) {
 			//toolbar.style.display = '';
 			pushFrame();
 			doDecodeProgress(false);
-			canvas.width = hdr.width;
-			canvas.height = hdr.height;
+			if ( ! (options.c_w && options.c_h) ) {
+				canvas.width = hdr.width * get_canvas_scale();
+				canvas.height = hdr.height * get_canvas_scale();
+			}
 			player.init();
 			loading = false;
-			register_canvas_handers();
-			if (load_callback)
-			{
+			if (load_callback) {
 				load_callback();
 			}
 
@@ -752,39 +747,39 @@ var SuperGif = function ( options ) {
 	};
 
 	var init = function () {
-			var parent = gif.parentNode;
+		var parent = gif.parentNode;
 
-			var div = document.createElement('div');
-			canvas = document.createElement('canvas');
-			ctx = canvas.getContext('2d');
-			toolbar = document.createElement('div');
+		var div = document.createElement('div');
+		canvas = document.createElement('canvas');
+		ctx = canvas.getContext('2d');
+		toolbar = document.createElement('div');
 
-			tmpCanvas = document.createElement('canvas');
+		tmpCanvas = document.createElement('canvas');
 
-			div.width = canvas.width = gif.width;
-			div.height = canvas.height = gif.height;
-			toolbar.style.minWidth = gif.width + 'px';
+		div.width = canvas.width = gif.width;
+		div.height = canvas.height = gif.height;
+		toolbar.style.minWidth = gif.width + 'px';
 
-			div.className = 'jsgif';
-			toolbar.className = 'jsgif_toolbar';
-			div.appendChild(canvas);
-			div.appendChild(toolbar);
+		div.className = 'jsgif';
+		toolbar.className = 'jsgif_toolbar';
+		div.appendChild(canvas);
+		div.appendChild(toolbar);
 
-			parent.insertBefore(div, gif);
-			parent.removeChild(gif);
+		parent.insertBefore(div, gif);
+		parent.removeChild(gif);
 
+		if (options.c_w && options.c_h) setSizes(options.c_w, options.c_h);
 	};
 
 	var get_canvas_scale = function() {
-		if (options.max_width && canvas.width > options.max_width)
-		{
-			return options.max_width / canvas.width;
+		var scale;
+		if (options.max_width && hdr) {
+			scale = options.max_width / hdr.width;
 		}
-		else
-		{
-			return 1;
+		else {
+			scale = 1;
 		}
-
+		return scale;
 	}
 
 	var canvas, ctx, toolbar, tmpCanvas;
@@ -799,24 +794,13 @@ var SuperGif = function ( options ) {
 		move_to: player.move_to,
 
 		// getters for instance vars
-		get_playing: function() {
-			return player.playing;
-		},
-		get_canvas: function() {
-			return canvas;
-		},
-		get_loading: function() {
-			return loading
-		},
-		get_auto_play: function() {
-			return options.auto_play;
-		},
-		get_length: function() {
-			return player.length();
-		},
-		get_current_frame: function() {
-			return player.current_frame();
-		},
+		get_playing      : function() { return player.playing },
+		get_canvas       : function() { return canvas },
+		get_canvas_scale : function() { return get_canvas_scale() },
+		get_loading      : function() { return loading },
+		get_auto_play    : function() { return options.auto_play },
+		get_length       : function() { return player.length() },
+		get_current_frame: function() { return player.current_frame() },
 		load: function (callback) {
 
 			if (callback) load_callback = callback;
@@ -839,9 +823,7 @@ var SuperGif = function ( options ) {
 			h.open('GET', gif.getAttribute('rel:animated_src') || gif.src, true);
 			h.send();
 
-
 		}
 	};
 
 };
-
