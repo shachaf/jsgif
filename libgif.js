@@ -426,8 +426,10 @@ var SuperGif = function ( opts ) {
 	var transparency = null;
 	var delay = null;
 	var disposalMethod = null;
+	var disposalRestoreFromIdx = 0;
 	var lastDisposalMethod = null;
 	var frame = null;
+	var lastImg = null;
 
 	var playing = true;
 	var forward = true;
@@ -567,45 +569,66 @@ var SuperGif = function ( opts ) {
 		});
 	};
 
-	var firstImg = false;
-	var firstCData = false;
-
 	var doImg = function (img) {
 		if (!frame) frame = tmpCanvas.getContext('2d');
+
+		var currIdx = frames.length;
+
 		//ct = color table, gct = global color table
 		var ct = img.lctFlag ? img.lct : hdr.gct; // TODO: What if neither exists?
-		var cData = frame.getImageData(img.leftPos, img.topPos, img.width, img.height);
+
+		/*
+		Disposal method indicates the way in which the graphic is to
+		be treated after being displayed.
+
+		Values :    0 - No disposal specified. The decoder is
+						not required to take any action.
+					1 - Do not dispose. The graphic is to be left
+						in place.
+					2 - Restore to background color. The area used by the
+						graphic must be restored to the background color.
+					3 - Restore to previous. The decoder is required to
+						restore the area overwritten by the graphic with
+						what was there prior to rendering the graphic.
+
+						Importantly, "previous" means the frame state
+						after the last disposal of method 0, 1, or 2.
+		*/
+		if (currIdx > 0) {
+			if (lastDisposalMethod === 3) {
+				// Restore to previous
+				frame.putImageData(frames[disposalRestoreFromIdx].data, 0, 0);
+			} else {
+				disposalRestoreFromIdx = currIdx - 1;
+			}
+
+			if (lastDisposalMethod === 2) {
+				// Restore to background color
+				// Browser implementations historically restore to transparent; we do the same.
+				// http://www.wizards-toolkit.org/discourse-server/viewtopic.php?f=1&t=21172#p86079
+				frame.clearRect(lastImg.leftPos, lastImg.topPos, lastImg.width, lastImg.height);
+			}
+		}
+		// else, Undefined/Do not dispose.
+		// frame contains final pixel data from the last frame; do nothing
+
+		//Get existing pixels for img region after applying disposal method
+		var imgData = frame.getImageData(img.leftPos, img.topPos, img.width, img.height);
 
 		//apply color table colors
+		var cdd = imgData.data;
 		img.pixels.forEach(function (pixel, i) {
-			// cData.data === [R,G,B,A,...]
-			if (transparency !== pixel) { // This includes null, if no transparency was defined.
-				cData.data[i * 4 + 0] = ct[pixel][0];
-				cData.data[i * 4 + 1] = ct[pixel][1];
-				cData.data[i * 4 + 2] = ct[pixel][2];
-				cData.data[i * 4 + 3] = 255; // Opaque.
-			}
-			else {
-				// TODO: Handle disposal method properly.
-				// XXX: When I get to an Internet connection, check which disposal method is which.
-				if (lastDisposalMethod === 2 || lastDisposalMethod === 3) {
-					cData.data[i * 4 + 3] = 0; // Transparent.
-					// XXX: This is very very wrong.
-				}
-				else {
-					// lastDisposalMethod should be null (no GCE), 0, or 1; leave the pixel as it is.
-					// assert(lastDispsalMethod === null || lastDispsalMethod === 0 || lastDispsalMethod === 1);
-					// XXX: If this is the first frame (and we *do* have a GCE),
-					// lastDispsalMethod will be null, but we want to set undefined
-					// pixels to the background color.
-				}
+			// imgData.data === [R,G,B,A,R,G,B,A,...]
+			if (pixel !== transparency) {
+				cdd[i * 4 + 0] = ct[pixel][0];
+				cdd[i * 4 + 1] = ct[pixel][1];
+				cdd[i * 4 + 2] = ct[pixel][2];
+				cdd[i * 4 + 3] = 255; // Opaque.
 			}
 		});
+		imgData.data = cdd;
 
-		if (!firstImg) firstImg = img;
-		if (!firstCData) firstCData = cData;
-
-		frame.putImageData(cData, img.leftPos, img.topPos);
+		frame.putImageData(imgData, img.leftPos, img.topPos);
 
 		if (!ctx_scaled) {
 			ctx.scale(get_canvas_scale(),get_canvas_scale());
@@ -616,6 +639,7 @@ var SuperGif = function ( opts ) {
 		// bar for each image chunk (not just the final image).
 		ctx.drawImage(tmpCanvas, 0, 0);
 
+		lastImg = img;
 	};
 
 	var player = (function () {
@@ -655,7 +679,7 @@ var SuperGif = function ( opts ) {
 			curFrame = i;
 
 			tmpCanvas.getContext("2d").putImageData(frames[i].data, 0, 0);
-
+			ctx.globalCompositeOperation = "copy";
 			ctx.drawImage(tmpCanvas, 0, 0);
 
 		};
