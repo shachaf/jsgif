@@ -764,7 +764,7 @@ var SuperGif = function ( opts ) {
 			player.init();
 			loading = false;
 			if (load_callback) {
-				load_callback();
+				load_callback(gif);
 			}
 
 		}
