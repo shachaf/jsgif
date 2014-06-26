@@ -797,7 +797,7 @@ var SuperGif = function ( opts ) {
 
 	var get_canvas_scale = function() {
 		var scale;
-		if (options.max_width && hdr) {
+		if (options.max_width && hdr && hdr.width > options.max_width) {
 			scale = options.max_width / hdr.width;
 		}
 		else {
