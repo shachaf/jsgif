@@ -508,9 +508,10 @@ var SuperGif = function ( opts ) {
 				}
 			}
 			else {
-				top = canvas.height - height;
-				mid = (pos / length) * canvas.width;
-				width = canvas.width;
+				top = (canvas.height - height) / (ctx_scaled ? get_canvas_scale() : 1);
+				mid = ((pos / length) * canvas.width) / (ctx_scaled ? get_canvas_scale() : 1);
+				width = canvas.width / (ctx_scaled ? get_canvas_scale() : 1 );
+				height /= ctx_scaled ? get_canvas_scale() : 1;
 			}
 			// XXX Figure out alpha fillRect.
 			//ctx.fillStyle = 'salmon';
