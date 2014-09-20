@@ -402,7 +402,6 @@ var parseGIF = function (st, handler) {
 	parse();
 };
 
-
 var SuperGif = function ( opts ) {
 	var options = {
 		//viewport position
@@ -794,6 +793,7 @@ var SuperGif = function ( opts ) {
 		parent.removeChild(gif);
 
 		if (options.c_w && options.c_h) setSizes(options.c_w, options.c_h);
+		initialized=true;
 	};
 
 	var get_canvas_scale = function() {
@@ -826,11 +826,19 @@ var SuperGif = function ( opts ) {
 		get_auto_play    : function() { return options.auto_play },
 		get_length       : function() { return player.length() },
 		get_current_frame: function() { return player.current_frame() },
-		load: function (callback) {
-
+		load_url: function(src,callback){
+			if (this.get_loading()) return;
 			if (callback) load_callback = callback;
-			loading = true;
+			else load_callback = false;
 
+			loading = true;
+			frames = [];
+			clear();
+			disposalRestoreFromIdx = 0;
+			lastDisposalMethod = null;
+			frame = null;
+			lastImg = null;
+			
 			var h = new XMLHttpRequest();
 			h.overrideMimeType('text/plain; charset=x-user-defined');
 			h.onloadstart = function() {
@@ -845,9 +853,11 @@ var SuperGif = function ( opts ) {
 				if (e.lengthComputable) doShowProgress(e.loaded, e.total, true);
 			};
 			h.onerror = function() { doLoadError('xhr'); };
-			h.open('GET', gif.getAttribute('rel:animated_src') || gif.src, true);
+			h.open('GET', src, true);
 			h.send();
-
+		},
+		load: function (callback) {
+			this.load_url(gif.getAttribute('rel:animated_src') || gif.src,callback);
 		}
 	};
 
