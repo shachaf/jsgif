@@ -54,7 +54,8 @@ Of note to the developer, libjs.gif contains a class SuperGif, which can be used
 ### Instance methods
 
 #### loading
-* **load( callback )** -	Loads the gif into a canvas element and then calls callback if one is passed
+* **load( callback )** -	Loads the gif specified by the src or rel:animated_src sttributie of the img tag into a canvas element and then calls callback if one is passed
+* **load_url( src, callback )** -	Loads the gif file specified in the src argument into a canvas element and then calls callback if one is passed
 
 #### play controls
 * **play** -				Start playing the gif
