@@ -87,7 +87,10 @@ var Stream = function (data) {
 		if (this.pos >= this.data.length) {
 			throw new Error('Attempted to read past end of stream.');
 		}
-		return data.charCodeAt(this.pos++) & 0xFF;
+		if (data instanceof Uint8Array)
+			return data[this.pos++];
+		else
+			return data.charCodeAt(this.pos++) & 0xFF;
 	};
 
 	this.readBytes = function (n) {
@@ -439,7 +442,7 @@ var SuperGif = function ( opts ) {
 	var frames = [];
 
 	var gif = options.gif;
-	if (typeof options.auto_play == 'undefined') 
+	if (typeof options.auto_play == 'undefined')
 		options.auto_play = (!gif.getAttribute('rel:auto_play') || gif.getAttribute('rel:auto_play') == '1');
 
 	var clear = function () {
@@ -812,6 +815,22 @@ var SuperGif = function ( opts ) {
 	var initialized = false;
 	var load_callback = false;
 
+	var load_setup = function(callback) {
+		if (loading) return false;
+		if (callback) load_callback = callback;
+		else load_callback = false;
+
+		loading = true;
+		frames = [];
+		clear();
+		disposalRestoreFromIdx = 0;
+		lastDisposalMethod = null;
+		frame = null;
+		lastImg = null;
+
+		return true;
+	}
+
 	return {
 		// play controls
 		play: player.play,
@@ -828,23 +847,13 @@ var SuperGif = function ( opts ) {
 		get_length       : function() { return player.length() },
 		get_current_frame: function() { return player.current_frame() },
 		load_url: function(src,callback){
-			if (this.get_loading()) return;
-			if (callback) load_callback = callback;
-			else load_callback = false;
+			if (!load_setup(callback)) return;
 
-			loading = true;
-			frames = [];
-			clear();
-			disposalRestoreFromIdx = 0;
-			lastDisposalMethod = null;
-			frame = null;
-			lastImg = null;
-			
 			var h = new XMLHttpRequest();
 			h.overrideMimeType('text/plain; charset=x-user-defined');
 			h.onloadstart = function() {
-				// Wait until connection is oppened to replace the gif element with a canvas to avoid a blank img
-				if (!initialized ) init();
+				// Wait until connection is opened to replace the gif element with a canvas to avoid a blank img
+				if (!initialized) init();
 			};
 			h.onload = function(e) {
 				stream = new Stream(h.responseText);
@@ -859,6 +868,12 @@ var SuperGif = function ( opts ) {
 		},
 		load: function (callback) {
 			this.load_url(gif.getAttribute('rel:animated_src') || gif.src,callback);
+		},
+		load_raw: function(arr, callback) {
+			if (!load_setup(callback)) return;
+			if (!initialized) init();
+			stream = new Stream(arr);
+			setTimeout(doParse, 0);
 		}
 	};
 
