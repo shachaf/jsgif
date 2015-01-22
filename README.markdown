@@ -47,9 +47,12 @@ Of note to the developer, libjs.gif contains a class SuperGif, which can be used
 ### Constructor options
 
 * **gif**		-		Required. The DOM element of an img tag.
+* **loop**	-			Optional. Force overwrite the looping mode of the gif.
 * **auto\_play** -			Optional. Same as the rel:auto_play attribute above, this arg overrides the img tag info.
 * **max\_width** -			Optional. Scale images over max\_width down to max_width. Helpful with mobile.
 * **rubbable** -			Optional. Make it rubbable.
+* **on_end** -				Optional. Add a listener for when the gif reaches the end of a single loop (one iteration)
+* **loop_delay** -			Optional. The amount of time to pause (in ms) after each single loop (iteration)
 
 ### Instance methods
 
