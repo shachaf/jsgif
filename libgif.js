@@ -24,8 +24,13 @@
 	Constructor options args
 
 		gif 				Required. The DOM element of an img tag.
+		loop_mode			Optional. Setting this to false will force disable looping of the gif.
 		auto_play 			Optional. Same as the rel:auto_play attribute above, this arg overrides the img tag info.
 		max_width			Optional. Scale images over max_width down to max_width. Helpful with mobile.
+ 		on_end				Optional. Add a callback for when the gif reaches the end of a single loop (one iteration). The first argument passed will be the gif HTMLElement.
+		loop_delay			Optional. The amount of time to pause (in ms) after each single loop (iteration).
+		draw_while_loading	Optional. Determines whether the gif will be drawn to the canvas whilst it is loaded.
+		show_progress_bar	Optional. Only applies when draw_while_loading is set to true.
 
 	Instance methods
 
@@ -445,6 +450,12 @@ var SuperGif = function ( opts ) {
 	if (typeof options.auto_play == 'undefined')
 		options.auto_play = (!gif.getAttribute('rel:auto_play') || gif.getAttribute('rel:auto_play') == '1');
 
+	var onEndListener = (options.hasOwnProperty('on_end') ? options.on_end : null);
+	var loopDelay = (options.hasOwnProperty('loop_delay') ? options.loop_delay : 0);
+	var overrideLoopMode = (options.hasOwnProperty('loop_mode') ? options.loop_mode : 'auto');
+	var drawWhileLoading = (options.hasOwnProperty('draw_while_loading') ? options.draw_while_loading : true);
+	var showProgressBar = drawWhileLoading ? (options.hasOwnProperty('show_progress_bar') ? options.show_progress_bar : true) : false;
+
 	var clear = function () {
 		transparency = null;
 		delay = null;
@@ -482,7 +493,7 @@ var SuperGif = function ( opts ) {
 	}
 
 	var doShowProgress = function (pos, length, draw) {
-		if (draw) {
+		if (draw && showProgressBar) {
 			var height = 25;
 			var left, mid, top, width;
 			if (options.is_vp) {
@@ -641,7 +652,8 @@ var SuperGif = function ( opts ) {
 
 		// We could use the on-page canvas directly, except that we draw a progress
 		// bar for each image chunk (not just the final image).
-		ctx.drawImage(tmpCanvas, 0, 0);
+		if (drawWhileLoading)
+			ctx.drawImage(tmpCanvas, 0, 0);
 
 		lastImg = img;
 	};
@@ -650,15 +662,31 @@ var SuperGif = function ( opts ) {
 		var i = -1;
 		var curFrame;
 		var delayInfo;
+		var iterationCount = 0;
 
 		var showingInfo = false;
 		var pinned = false;
 
-		var stepFrame = function (delta) { // XXX: Name is confusing.
-			i = (i + delta + frames.length) % frames.length;
+		/**
+		 * Gets the index of the frame "up next".
+		 * @returns {number}
+		 */
+		var getNextFrameNo = function () {
+			var delta = (forward ? 1 : -1);
+			return (i + delta + frames.length) % frames.length;
+		};
+
+		var stepFrame = function () { // XXX: Name is confusing.
+			i = getNextFrameNo();
 			curFrame = i + 1;
 			delayInfo = frames[i].delay;
 			putFrame();
+		};
+
+		var completeLoop = function () {
+			if (onEndListener !== null)
+				onEndListener(gif);
+			iterationCount++;
 		};
 
 		var step = (function () {
@@ -668,10 +696,19 @@ var SuperGif = function ( opts ) {
 				stepping = playing;
 				if (!stepping) return;
 
-				stepFrame(forward ? 1 : -1);
+				stepFrame();
 				var delay = frames[i].delay * 10;
 				if (!delay) delay = 100; // FIXME: Should this even default at all? What should it be?
-				setTimeout(doStep, delay);
+
+				var nextFrameNo = getNextFrameNo();
+				if (nextFrameNo === 0) {
+					delay += loopDelay;
+					setTimeout(completeLoop, delay - 1);
+				}
+
+				if ((overrideLoopMode !== false || nextFrameNo !== 0 || iterationCount < 0))
+					setTimeout(doStep, delay);
+
 			};
 
 			return function () {
