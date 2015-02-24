@@ -660,8 +660,6 @@ var SuperGif = function ( opts ) {
 
 	var player = (function () {
 		var i = -1;
-		var curFrame;
-		var delayInfo;
 		var iterationCount = 0;
 
 		var showingInfo = false;
@@ -676,10 +674,9 @@ var SuperGif = function ( opts ) {
 			return (i + delta + frames.length) % frames.length;
 		};
 
-		var stepFrame = function () { // XXX: Name is confusing.
-			i = getNextFrameNo();
-			curFrame = i + 1;
-			delayInfo = frames[i].delay;
+		var stepFrame = function (amount) { // XXX: Name is confusing.
+			i = i + amount;
+
 			putFrame();
 		};
 
@@ -696,7 +693,7 @@ var SuperGif = function ( opts ) {
 				stepping = playing;
 				if (!stepping) return;
 
-				stepFrame();
+				stepFrame(1);
 				var delay = frames[i].delay * 10;
 				if (!delay) delay = 100; // FIXME: Should this even default at all? What should it be?
 
@@ -717,12 +714,19 @@ var SuperGif = function ( opts ) {
 		}());
 
 		var putFrame = function () {
-			curFrame = i;
+            i = parseInt(i, 10);
 
-			tmpCanvas.getContext("2d").putImageData(frames[i].data, 0, 0);
+            if (i > frames.length - 1){
+                i = 0;
+            }
+
+            if (i < 0){
+                i = 0;
+            }
+
+            tmpCanvas.getContext("2d").putImageData(frames[i].data, 0, 0);
 			ctx.globalCompositeOperation = "copy";
 			ctx.drawImage(tmpCanvas, 0, 0);
-
 		};
 
 		var play = function () {
@@ -751,7 +755,6 @@ var SuperGif = function ( opts ) {
 					putFrame();
 				}
 			},
-			current_frame: curFrame,
 			step: step,
 			play: play,
 			pause: pause,
