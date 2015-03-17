@@ -744,7 +744,6 @@
 
             var pause = function () {
                 playing = false;
-                clearTimeout(timer);
             };
 
 
