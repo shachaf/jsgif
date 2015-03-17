@@ -649,7 +649,7 @@
                     cdd[i * 4 + 3] = 255; // Opaque.
                 }
             });
-            imgData.data = cdd;
+            imgData.data.set(cdd);
 
             frame.putImageData(imgData, img.leftPos, img.topPos);
 
@@ -744,6 +744,7 @@
 
             var pause = function () {
                 playing = false;
+                clearTimeout(timer);
             };
 
 
