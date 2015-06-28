@@ -453,6 +453,7 @@
         var ctx_scaled = false;
 
         var frames = [];
+        var frameOffsets = []; // elements have .x and .y properties
 
         var gif = options.gif;
         if (typeof options.auto_play == 'undefined')
@@ -498,7 +499,20 @@
             tmpCanvas.style.width = w + 'px';
             tmpCanvas.style.height = h + 'px';
             tmpCanvas.getContext('2d').setTransform(1, 0, 0, 1, 0, 0);
-        }
+        };
+
+        var setFrameOffset = function(frame, offset) {
+            if (!frameOffsets[frame]) {
+                frameOffsets[frame] = offset;
+                return;
+            }
+            if (typeof offset.x !== 'undefined') {
+                frameOffsets[frame].x = offset.x;
+            }
+            if (typeof offset.y !== 'undefined') {
+                frameOffsets[frame].y = offset.y;
+            }
+        };
 
         var doShowProgress = function (pos, length, draw) {
             if (draw && showProgressBar) {
@@ -590,6 +604,7 @@
                             data: frame.getImageData(0, 0, hdr.width, hdr.height),
                             delay: delay
                         });
+            frameOffsets.push({ x: 0, y: 0 });
         };
 
         var doImg = function (img) {
@@ -722,6 +737,7 @@
             }());
 
             var putFrame = function () {
+                var offset;
                 i = parseInt(i, 10);
 
                 if (i > frames.length - 1){
@@ -732,7 +748,9 @@
                     i = 0;
                 }
 
-                tmpCanvas.getContext("2d").putImageData(frames[i].data, 0, 0);
+                offset = frameOffsets[i];
+
+                tmpCanvas.getContext("2d").putImageData(frames[i].data, offset.x, offset.y);
                 ctx.globalCompositeOperation = "copy";
                 ctx.drawImage(tmpCanvas, 0, 0);
             };
@@ -922,7 +940,8 @@
                 if (!initialized) init();
                 stream = new Stream(arr);
                 setTimeout(doParse, 0);
-            }
+            },
+            set_frame_offset: setFrameOffset
         };
     };
 
