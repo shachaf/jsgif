@@ -22,6 +22,7 @@ Of note to the developer, libjs.gif contains a class SuperGif, which can be used
 
 ### Example usage:
 
+```html
 		<img src="./example1_preview.gif" rel:animated_src="./example1.gif" width="360" height="360" rel:auto_play="1" rel:rubbable="1" />
 
 		<script type="text/javascript">
@@ -34,6 +35,7 @@ Of note to the developer, libjs.gif contains a class SuperGif, which can be used
 				}
 			});
 		</script>
+```		
 
 ### Image tag attributes:
 
