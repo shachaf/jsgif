@@ -442,7 +442,7 @@
         var transparency = null;
         var delay = null;
         var disposalMethod = null;
-        var disposalRestoreFromIdx = 0;
+        var disposalRestoreFromIdx = null;
         var lastDisposalMethod = null;
         var frame = null;
         var lastImg = null;
@@ -635,7 +635,13 @@
             if (currIdx > 0) {
                 if (lastDisposalMethod === 3) {
                     // Restore to previous
-                    frame.putImageData(frames[disposalRestoreFromIdx].data, 0, 0);
+                    // If we disposed every frame including first frame up to this point, then we have
+                    // no composited frame to restore to. In this case, restore to background instead.
+                    if (disposalRestoreFromIdx !== null) {
+                    	frame.putImageData(frames[disposalRestoreFromIdx].data, 0, 0);
+                    } else {
+                    	frame.clearRect(lastImg.leftPos, lastImg.topPos, lastImg.width, lastImg.height);
+                    }
                 } else {
                     disposalRestoreFromIdx = currIdx - 1;
                 }
@@ -889,7 +895,7 @@
             loading = true;
             frames = [];
             clear();
-            disposalRestoreFromIdx = 0;
+            disposalRestoreFromIdx = null;
             lastDisposalMethod = null;
             frame = null;
             lastImg = null;
