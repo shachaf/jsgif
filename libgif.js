@@ -709,14 +709,21 @@
                 putFrame();
             };
 
-            var completeLoop = function () {
-                if (onEndListener !== null)
-                    onEndListener(gif);
-                iterationCount++;
-            };
-
             var step = (function () {
                 var stepping = false;
+
+                var completeLoop = function () {
+                    if (onEndListener !== null)
+                        onEndListener(gif);
+                    iterationCount++;
+
+                    if (overrideLoopMode !== false || iterationCount < 0) {
+                        doStep();
+                    } else {
+                        stepping = false;
+                        playing = false;
+                    }
+                };
 
                 var doStep = function () {
                     stepping = playing;
@@ -729,12 +736,10 @@
                     var nextFrameNo = getNextFrameNo();
                     if (nextFrameNo === 0) {
                         delay += loopDelay;
-                        setTimeout(completeLoop, delay - 1);
-                    }
-
-                    if ((overrideLoopMode !== false || nextFrameNo !== 0 || iterationCount < 0))
+                        setTimeout(completeLoop, delay);
+                    } else {
                         setTimeout(doStep, delay);
-
+                    }
                 };
 
                 return function () {
