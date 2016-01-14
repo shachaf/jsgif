@@ -681,8 +681,10 @@
 
             // We could use the on-page canvas directly, except that we draw a progress
             // bar for each image chunk (not just the final image).
-            if (drawWhileLoading)
+            if (drawWhileLoading) {
                 ctx.drawImage(tmpCanvas, 0, 0);
+                drawWhileLoading = options.auto_play;
+            }
 
             lastImg = img;
         };
