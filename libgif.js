@@ -660,17 +660,15 @@
             var imgData = frame.getImageData(img.leftPos, img.topPos, img.width, img.height);
 
             //apply color table colors
-            var cdd = imgData.data;
             img.pixels.forEach(function (pixel, i) {
                 // imgData.data === [R,G,B,A,R,G,B,A,...]
                 if (pixel !== transparency) {
-                    cdd[i * 4 + 0] = ct[pixel][0];
-                    cdd[i * 4 + 1] = ct[pixel][1];
-                    cdd[i * 4 + 2] = ct[pixel][2];
-                    cdd[i * 4 + 3] = 255; // Opaque.
+                    imgData.data[i * 4 + 0] = ct[pixel][0];
+                    imgData.data[i * 4 + 1] = ct[pixel][1];
+                    imgData.data[i * 4 + 2] = ct[pixel][2];
+                    imgData.data[i * 4 + 3] = 255; // Opaque.
                 }
             });
-            imgData.data.set(cdd);
 
             frame.putImageData(imgData, img.leftPos, img.topPos);
 
@@ -927,20 +925,47 @@
                 if (!load_setup(callback)) return;
 
                 var h = new XMLHttpRequest();
-                h.overrideMimeType('text/plain; charset=x-user-defined');
+                // new browsers (XMLHttpRequest2-compliant)
+                h.open('GET', src, true);
+
+                if ('overrideMimeType' in h) {
+                    h.overrideMimeType('text/plain; charset=x-user-defined');
+                }
+
+                // old browsers (XMLHttpRequest-compliant)
+                else if ('responseType' in h) {
+                    h.responseType = 'arraybuffer';
+                }
+
+                // IE9 (Microsoft.XMLHTTP-compliant)
+                else {
+                    h.setRequestHeader('Accept-Charset', 'x-user-defined');
+                }
+
                 h.onloadstart = function() {
                     // Wait until connection is opened to replace the gif element with a canvas to avoid a blank img
                     if (!initialized) init();
                 };
                 h.onload = function(e) {
-                    stream = new Stream(h.responseText);
+                    if (this.status != 200) {
+                        doLoadError('xhr - response');
+                    }
+                    // emulating response field for IE9
+                    if (!('response' in this)) {
+                        this.response = new VBArray(this.responseText).toArray().map(String.fromCharCode).join('');
+                    }
+                    var data = this.response;
+                    if (data.toString().indexOf("ArrayBuffer") > 0) {
+                        data = new Uint8Array(data);
+                    }
+
+                    stream = new Stream(data);
                     setTimeout(doParse, 0);
                 };
                 h.onprogress = function (e) {
                     if (e.lengthComputable) doShowProgress(e.loaded, e.total, true);
                 };
                 h.onerror = function() { doLoadError('xhr'); };
-                h.open('GET', src, true);
                 h.send();
             },
             load: function (callback) {
