@@ -464,6 +464,9 @@
         var overrideLoopMode = (options.hasOwnProperty('loop_mode') ? options.loop_mode : 'auto');
         var drawWhileLoading = (options.hasOwnProperty('draw_while_loading') ? options.draw_while_loading : true);
         var showProgressBar = drawWhileLoading ? (options.hasOwnProperty('show_progress_bar') ? options.show_progress_bar : true) : false;
+        var progressBarHeight = (options.hasOwnProperty('progressbar_height') ? options.progressbar_height : 25);
+        var progressBarBackgroundColor = (options.hasOwnProperty('progressbar_background_color') ? options.progressbar_background_color : 'rgba(255,255,255,0.4)');
+        var progressBarForegroundColor = (options.hasOwnProperty('progressbar_foreground_color') ? options.progressbar_foreground_color : 'rgba(255,0,22,.8)');
 
         var clear = function () {
             transparency = null;
@@ -516,7 +519,7 @@
 
         var doShowProgress = function (pos, length, draw) {
             if (draw && showProgressBar) {
-                var height = 25;
+                var height = progressBarHeight;
                 var left, mid, top, width;
                 if (options.is_vp) {
                     if (!ctx_scaled) {
@@ -551,13 +554,11 @@
                     width = canvas.width / (ctx_scaled ? get_canvas_scale() : 1 );
                     height /= ctx_scaled ? get_canvas_scale() : 1;
                 }
-                // XXX Figure out alpha fillRect.
-                //ctx.fillStyle = 'salmon';
-                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+
+                ctx.fillStyle = progressBarBackgroundColor;
                 ctx.fillRect(mid, top, width - mid, height);
 
-                //ctx.fillStyle = 'teal';
-                ctx.fillStyle = 'rgba(255,0,22,.8)';
+                ctx.fillStyle = progressBarForegroundColor;
                 ctx.fillRect(0, top, mid, height);
             }
         };

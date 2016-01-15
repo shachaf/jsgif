@@ -23,7 +23,7 @@ Of note to the developer, libjs.gif contains a class SuperGif, which can be used
 ### Example usage:
 
 ```html
-		<img src="./example1_preview.gif" rel:animated_src="./example1.gif" 
+		<img src="./example1_preview.gif" rel:animated_src="./example1.gif"
 		width="360" height="360" rel:auto_play="1" rel:rubbable="1" />
 
 		<script type="text/javascript">
@@ -36,7 +36,7 @@ Of note to the developer, libjs.gif contains a class SuperGif, which can be used
 				}
 			});
 		</script>
-```		
+```
 
 ### Image tag attributes:
 
@@ -56,6 +56,9 @@ Of note to the developer, libjs.gif contains a class SuperGif, which can be used
 * **rubbable** -			Optional. Make it rubbable.
 * **on_end** -				Optional. Add a callback for when the gif reaches the end of a single loop (one iteration). The first argument passed will be the gif HTMLElement.
 * **loop_delay** -			Optional. The amount of time to pause (in ms) after each single loop (iteration).
+* **progressbar_height** -			Optional. The height of the progress bar.
+* **progressbar_background_color** -			Optional. The background color of the progress bar.
+* **progressbar_foreground_color** -			Optional. The foreground color of the progress bar.
 
 ### Instance methods
 
