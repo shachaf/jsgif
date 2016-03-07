@@ -917,7 +917,7 @@
             move_to: player.move_to,
 
             // getters for instance vars
-            get_playing      : function() { return player.playing },
+            get_playing      : function() { return playing },
             get_canvas       : function() { return canvas },
             get_canvas_scale : function() { return get_canvas_scale() },
             get_loading      : function() { return loading },
