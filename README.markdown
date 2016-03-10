@@ -8,7 +8,7 @@ As an added bonus, you can make gifs "rubbable" so that scrubbing with your mous
 
 # Example
 
-Please see example.html for, you know, and example. This will demonstrate how to use basic play controls for a gif, and also a rubbable one.
+Please see example.html for, you know, an example. This will demonstrate how to use basic play controls for a gif, and also a rubbable one.
 
 Please note: this example must be loaded via a webserver, not directly from disk. I.e. http://localhost/libgif-js/example.html NOT file:///libgif-js/example.html. See the same-domain origin caveat at the bottom of this document for more information.
 
