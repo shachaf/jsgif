@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<script type="text/javascript" src="./libgif.js"></script>
+		<script type="text/javascript" src="./rubbable.js"></script>
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+		<title>
+			Example gif
+		</title>
+	</head>
+
+	<body>
+		<center>
+			<h1>Example with controls and no auto-play</h1>
+			<img id="example1" src="./example_gifs/rub_test_preview.jpg" rel:animated_src="./example_gifs/rub_test.gif" rel:auto_play="0" width="467" height="375" />
+			<br>
+			<script type="text/javascript">
+				var sup1 = new SuperGif({ gif: document.getElementById('example1') } );
+				sup1.load();
+			</script>
+			<a href="javascript:;" onmousedown="sup1.pause(); return false;">Pause</a> |
+			<a href="javascript:;" onmousedown="sup1.play(); return false;">Play</a> |
+			<a href="javascript:;" onmousedown="sup1.move_to(0); return false;">Restart</a> |
+			<a href="javascript:;" onmousedown="sup1.move_relative(1); return false;">Step forward</a> |
+			<a href="javascript:;" onmousedown="sup1.move_relative(-1); return false;">Step back</a>
+
+			<h1>Example with rubbing and auto-play on</h1>
+			<img id="example2" src="./example_gifs/rub_test.gif" rel:auto_play="1" width="467" height="375" rel:rubbable="1" />
+			<br>
+			<script type="text/javascript">
+				var sup2 = new RubbableGif({ gif: document.getElementById('example2') } );
+				sup2.load();
+			</script>
+
+			<br><br>
+			<p>Image via <a href="http://mlkshk.com/p/IP08">mlkshk</a></p>
+		</center>
+
+	</body>
+
+</html>
